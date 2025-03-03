@@ -1,7 +1,14 @@
 <html>
 <head>
     <title>Three.js COARV</title>
-    <script src="./lib/three.module.js"></script>
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@<version>/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@<version>/examples/jsm/"
+          }
+        }
+      </script>
 </html>
 <body>
     <canvas id="c"></canvas>

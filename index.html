@@ -40,7 +40,8 @@
 	const far = 5;
 	const camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
 	camera.position.z = 2;
-
+    camera.aspect = canvas.clientWidth / canvas.clientHeight;
+    camera.updateProjectionMatrix();
 	const scene = new THREE.Scene();
 
 	const boxWidth = 1;

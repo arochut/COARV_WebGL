@@ -1,14 +1,17 @@
 <html>
 <head>
     <title>Three.js COARV</title>
+    <!-- Allow MIME type 'text/plain' for the imports  -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; object-src 'none'; base-uri 'none';">
+    <!-- Importmap for the Three.js library -->
     <script type="importmap">
-        {
-          "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@v0.149.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.149.0/examples/jsm/"
-          }
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@latest/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@latest/examples/jsm/"
         }
-    </script>  
+      }
+    </script>
     <script src="planets.js" type="module"></script>
 </html>
 <body>
@@ -16,13 +19,13 @@
 </body>
 <style>
     html, body {
-       margin: 0;
-       height: 100%;
+      margin: 0;
+      height: 100%;
     }
     #c {
-       width: 100%;
-       height: 100%;
-       display: block;
+      width: 100%;
+      height: 100%;
+      display: block;
     }
 </style>
 

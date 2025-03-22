@@ -7,12 +7,31 @@ import { distanceToSun, rotateVec3 } from './helper.js';
 import { randInt } from './helper.js';
 
 
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+
+
 function main() {
     
     
+    const sizes = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+    };
+
     const canvas = document.querySelector( '#c' );
     const renderer = new THREE.WebGLRenderer( { antialias: true, canvas } );
-    
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // ##############################     SCENE
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
 
     // ##############################     CAMERA
     const fov = 70;
@@ -44,29 +63,49 @@ function main() {
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
 
+    
 
-    // ##############################     CAMERA
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
+    // ##############################     POST PROCESSING
+    const postProcessing = new EffectComposer(renderer);
+
+    const renderScene = new RenderPass( scene, camera );
     
-    // ##############################     LIGHTING 
-    const color = 0xffffff;
-    const intensity = 3;
-    const light = new THREE.AmbientLight(color, intensity);
-    scene.add(light);
-    
+    const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+    bloomPass.threshold = 0.5;
+    bloomPass.strength = 0.5;
+    bloomPass.radius = 0.4;
+
+    const outputPass = new OutputPass();
+
+    let composer = new EffectComposer( renderer );
+    composer.addPass( renderScene );
+    composer.addPass( bloomPass );
+    composer.addPass( outputPass );
+
     
     // ##############################     PLANETS 
     const SCALE = 1e-6;
     const planetInfoRetriever = new PlanetInfoRetriever();
     const planets = [];
-    // Based on the data retrieved from the API, create a sphere for each planet
+    // Based on the data retrieved from the API, we create a sphere for each planet
     // Position it according to the semimajor, perihelion, aphelion, eccentricity and inclination
     // Add it to the scene
     planetInfoRetriever.retrieveData().then(data => {
         data.forEach(planet => {
             const geometry = new THREE.SphereGeometry(planet.meanRadius*SCALE*500, 32, 32);
-            const material = new THREE.MeshPhongMaterial({color: 0xffffff});
+
+            const textures = planetInfoRetriever.loadTexturesForPlanet(planet.englishName);
+            const material = new THREE.MeshBasicMaterial({map: textures.base});
+            if (textures.bumpMap) {
+                material.bumpMap = textures.bumpMap;
+                material.bumpScale = 1;
+            }
+            if (textures.specularMap) {
+                material.specularMap = textures.specularMap;
+                material.specular = new THREE.Color(0x262626);
+            }
+
+            
             const sphere = new THREE.Mesh(geometry, material);
             const position = planetInfoRetriever.getOrbitalPosition(SCALE, planet.semimajorAxis, planet.eccentricity, planet.inclination, 0);
             const startingAngle = randInt(0, 360);
@@ -81,9 +120,27 @@ function main() {
 
     // ##############################     SUN
     const sunGeometry = new THREE.SphereGeometry(696340*SCALE*10, 32, 32);
-    const sunMaterial = new THREE.MeshPhongMaterial({color: 0xffff00, emissive: 0xffff00});
+    const sunMaterial = new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load("/textures/sun.jpg"), emissive: 0xffff00, emissiveIntensity: 1});
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-    scene.add(sun); 
+    // Make the sun transparent for light to pass through
+    sun.material.transparent = true;
+    scene.add(sun);
+
+
+    /// LIGHTS 
+      // Ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+    scene.add(ambientLight);
+
+    // Point light
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.castShadow = true;
+    pointLight.shadow.mapSize.width = 4096;
+    pointLight.shadow.mapSize.height = 4096;
+    pointLight.shadow.camera.near = 1.5;
+    pointLight.shadow.camera.far = 30;
+    pointLight.shadow.radius = 16;
+    scene.add(pointLight);
 
 
 
@@ -124,10 +181,10 @@ function main() {
         sun.rotation.y = time * 0.1;
         controls.update();
 
-        
-        renderer.render(scene, camera);
+        composer.render();
         requestAnimationFrame(render);
     }
+    composer.render();
     requestAnimationFrame(render);
 }
 

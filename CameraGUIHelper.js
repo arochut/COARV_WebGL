@@ -1,3 +1,6 @@
+// Description: Camera GUI Helper
+// This file defines a GUI helper for controlling the parameters of a camera.
+
 export class CameraGUIHelper {
     constructor(camera) {
         this.camera = camera;
